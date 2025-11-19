@@ -160,11 +160,36 @@ export default async function ProductPage({ params }: PageProps) {
 }
 
 export async function generateStaticParams() {
-  // Generate static params for just a few products to avoid API rate limits
-  // In a real app, you'd fetch actual product IDs, but for demo we'll use a smaller set
-  const productIds = [1, 2, 3, 4, 5];
-  
-  return productIds.map((id) => ({
-    id: id.toString(),
-  }));
+  try {
+    // Fetch actual products to get real IDs
+    const response = await fetch('https://api.escuelajs.co/api/v1/products', {
+      next: { revalidate: 300 }
+    });
+    
+    if (!response.ok) {
+      // Fallback to a few product IDs if API fails
+      return [
+        { id: '1' },
+        { id: '2' },
+        { id: '3' }
+      ];
+    }
+    
+    const data = await response.json();
+    
+    // Get first 5 actual product IDs
+    const actualIds = data.slice(0, 5).map((product: { id: number }) => ({
+      id: product.id.toString(),
+    }));
+    
+    return actualIds;
+  } catch (error) {
+    console.error('Error in generateStaticParams:', error);
+    // Fallback to safe IDs
+    return [
+      { id: '1' },
+      { id: '2' },
+      { id: '3' }
+    ];
+  }
 }
