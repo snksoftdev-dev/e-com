@@ -23,15 +23,14 @@ function getMinimalFallbackData() {
 // Add retry logic and better error handling
 async function fetchWithRetry(url: string): Promise<Response> {
   try {
-    // Use a simpler fetch with minimal headers to avoid triggering API restrictions
+    // Use Next.js compatible caching for static generation
     const response = await fetch(url, {
       method: 'GET',
       headers: {
         'Accept': 'application/json',
       },
-      // Remove Vercel-specific caching for now
-      cache: 'no-store',
-      signal: AbortSignal.timeout(8000), // 8 second timeout
+      // Use Next.js caching instead of no-store to allow static generation
+      next: { revalidate: 300 }, // Cache for 5 minutes
     });
     
     if (response.ok) {
