@@ -21,51 +21,47 @@ function getMinimalFallbackData() {
 }
 
 // Add retry logic and better error handling
-async function fetchWithRetry(url: string, retries = 3): Promise<Response> {
-  for (let i = 0; i < retries; i++) {
-    try {
-      const response = await fetch(url, {
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-        },
-        // Add timeout and cache settings for Vercel
-        next: { revalidate: 3600 }, // Cache for 1 hour
-      });
-      
-      if (response.ok) {
-        return response;
-      }
-      
-      if (i === retries - 1) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-    } catch (error) {
-      console.error(`Attempt ${i + 1} failed:`, error);
-      if (i === retries - 1) {
-        throw error;
-      }
-      // Wait before retry
-      await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
+async function fetchWithRetry(url: string): Promise<Response> {
+  try {
+    // Use a simpler fetch with minimal headers to avoid triggering API restrictions
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+      },
+      // Remove Vercel-specific caching for now
+      cache: 'no-store',
+      signal: AbortSignal.timeout(8000), // 8 second timeout
+    });
+    
+    if (response.ok) {
+      return response;
     }
+    
+    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+  } catch (error) {
+    console.error('Fetch failed:', error);
+    throw error;
   }
-  throw new Error('All retry attempts failed');
 }
 
 export async function getAllProducts(): Promise<Product[]> {
   try {
+    console.log('Fetching products from FakeStore API...');
     const response = await fetchWithRetry(`${FAKE_STORE_API}/products`);
     const data = await response.json();
     
     // Validate the data structure
-    if (!Array.isArray(data)) {
-      console.error('Invalid API response: expected array');
+    if (!Array.isArray(data) || data.length === 0) {
+      console.error('Invalid or empty API response');
       return getMinimalFallbackData().products;
     }
     
+    console.log(`✅ Successfully fetched ${data.length} products from API`);
     return data;
   } catch (error) {
-    console.error('Error fetching products:', error);
+    console.error('❌ FakeStore API failed:', error);
+    console.log('🔄 Using fallback data');
     return getMinimalFallbackData().products;
   }
 }
@@ -119,17 +115,20 @@ export async function getProductsByCategory(category: string): Promise<Product[]
 
 export async function getCategories(): Promise<string[]> {
   try {
+    console.log('Fetching categories from FakeStore API...');
     const response = await fetchWithRetry(`${FAKE_STORE_API}/products/categories`);
     const data = await response.json();
     
-    if (!Array.isArray(data)) {
-      console.error('Invalid categories API response: expected array');
+    if (!Array.isArray(data) || data.length === 0) {
+      console.error('Invalid or empty categories API response');
       return getMinimalFallbackData().categories;
     }
     
+    console.log(`✅ Successfully fetched ${data.length} categories from API`);
     return data;
   } catch (error) {
-    console.error('Error fetching categories:', error);
+    console.error('❌ Categories API failed:', error);
+    console.log('🔄 Using fallback categories');
     return getMinimalFallbackData().categories;
   }
 }
