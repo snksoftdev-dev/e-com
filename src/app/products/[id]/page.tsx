@@ -160,9 +160,9 @@ export default async function ProductPage({ params }: PageProps) {
 }
 
 export async function generateStaticParams() {
-  // Generate static params for the first 20 products
-  // In a real app, you'd fetch all product IDs
-  const productIds = Array.from({ length: 20 }, (_, i) => i + 1);
+  // Generate static params for just a few products to avoid API rate limits
+  // In a real app, you'd fetch actual product IDs, but for demo we'll use a smaller set
+  const productIds = [1, 2, 3, 4, 5];
   
   return productIds.map((id) => ({
     id: id.toString(),
