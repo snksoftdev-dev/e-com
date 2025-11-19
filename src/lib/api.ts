@@ -2,6 +2,24 @@ import { Product } from '@/types';
 
 const FAKE_STORE_API = 'https://fakestoreapi.com';
 
+// Minimal fallback data for build time only
+function getMinimalFallbackData() {
+  return {
+    products: [
+      {
+        id: 1,
+        title: "Sample Product",
+        price: 29.99,
+        description: "This is a sample product for demonstration purposes.",
+        category: "electronics",
+        image: "https://via.placeholder.com/400x400",
+        rating: { rate: 4.0, count: 100 }
+      }
+    ],
+    categories: ["electronics", "jewelery", "men's clothing", "women's clothing"]
+  };
+}
+
 // Add retry logic and better error handling
 async function fetchWithRetry(url: string, retries = 3): Promise<Response> {
   for (let i = 0; i < retries; i++) {
@@ -42,13 +60,13 @@ export async function getAllProducts(): Promise<Product[]> {
     // Validate the data structure
     if (!Array.isArray(data)) {
       console.error('Invalid API response: expected array');
-      return [];
+      return getMinimalFallbackData().products;
     }
     
     return data;
   } catch (error) {
     console.error('Error fetching products:', error);
-    return [];
+    return getMinimalFallbackData().products;
   }
 }
 
@@ -59,7 +77,9 @@ export async function getProductById(id: string): Promise<Product | null> {
     return data;
   } catch (error) {
     console.error('Error fetching product:', error);
-    return null;
+    // Return fallback product if ID is 1
+    const fallbackData = getMinimalFallbackData();
+    return id === '1' ? fallbackData.products[0] : null;
   }
 }
 
@@ -70,6 +90,11 @@ export async function getProduct(id: number): Promise<Product> {
     return data;
   } catch (error) {
     console.error('Error fetching product:', error);
+    // Return fallback product if ID is 1
+    const fallbackData = getMinimalFallbackData();
+    if (id === 1) {
+      return fallbackData.products[0];
+    }
     throw error;
   }
 }
@@ -87,7 +112,8 @@ export async function getProductsByCategory(category: string): Promise<Product[]
     return data;
   } catch (error) {
     console.error('Error fetching products by category:', error);
-    return [];
+    const fallbackData = getMinimalFallbackData();
+    return category === 'electronics' ? fallbackData.products : [];
   }
 }
 
@@ -98,13 +124,13 @@ export async function getCategories(): Promise<string[]> {
     
     if (!Array.isArray(data)) {
       console.error('Invalid categories API response: expected array');
-      return [];
+      return getMinimalFallbackData().categories;
     }
     
     return data;
   } catch (error) {
     console.error('Error fetching categories:', error);
-    return [];
+    return getMinimalFallbackData().categories;
   }
 }
 
